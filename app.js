@@ -1,9 +1,9 @@
-import { createGame, tick, bite, secondStomach, MODES } from './engine.js';
+import { createGame, tick, bite, drinkTea, evolution, EVOLUTIONS, MODES } from './engine.js';
 const $ = id => document.getElementById(id);
 let mode = 'snack', state = createGame(), started = false, paused = false, sound = false, audio, last = 0, drawn = -1, finished = false;
 const canvas = $('canvas'), ctx = canvas.getContext('2d');
 let best = {};
-try { best = JSON.parse(localStorage.getItem('baibai-best') || '{}') || {}; } catch {}
+try { best = JSON.parse(localStorage.getItem('baibai-best-v2') || '{}') || {}; } catch {}
 function beep(freq = 360, length = .06) {
   if (!sound) return;
   try { audio ||= new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); const o = audio.createOscillator(), g = audio.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(freq, audio.currentTime); o.frequency.exponentialRampToValueAtTime(freq / 2, audio.currentTime + length); g.gain.setValueAtTime(.09, audio.currentTime); g.gain.exponentialRampToValueAtTime(.001, audio.currentTime + length); o.connect(g); g.connect(audio.destination); o.start(); o.stop(audio.currentTime + length); } catch {}
@@ -27,27 +27,37 @@ function render() {
  $('count').textContent=state.count.toLocaleString(); $('clock').textContent=state.elapsed.toFixed(1).padStart(4,'0')+' 秒';
  const remain=Math.max(0,state.next-state.elapsed); $('next').textContent=remain.toFixed(1)+' 秒'; $('timer-fill').style.width=(remain/state.interval*100)+'%'; $('stomach-fill').style.width=state.fullness+'%';
  $('stomach-label').textContent=state.fullness>90?'もう入らん！':state.fullness>65?'く、くるしい…':'まだいける'; $('stomach-fill').style.background=state.fullness>80?'var(--red)':'var(--green)';
- $('special').disabled=!started||paused||state.used||state.status!=='playing'; $('eat').disabled=paused||state.status!=='playing'; $('pause').disabled=!started||state.status!=='playing';
+ const evo=evolution(state), upcoming=EVOLUTIONS.find(e=>e.at>state.eaten), drinking=state.teaUntil>0, boosted=state.elapsed<state.boostUntil;
+ $('evolution-name').textContent=evo.name;
+ $('evolution-power').textContent=`一口 ${evo.power*(boosted?2:1)}個${boosted?' · 爆食い中！':''}`;
+ $('evolution-next').textContent=upcoming?`あと${upcoming.at-state.eaten}個で「${upcoming.name}」`:'人間の限界、どこいった。';
+ $('evolution-fill').style.width=(upcoming?(state.eaten-evo.at)/(upcoming.at-evo.at)*100:100)+'%';
+ $('special').disabled=!started||paused||drinking||state.elapsed<state.teaReady||state.status!=='playing';
+ $('tea-label').textContent=drinking?'お茶、ごくごく…':state.elapsed<state.teaReady?'お湯、沸かし中。':'お茶を飲む';
+ $('tea-hint').textContent=drinking?`あと${(state.teaUntil-state.elapsed).toFixed(1)}秒で爆食い！`:state.elapsed<state.teaReady?`あと${(state.teaReady-state.elapsed).toFixed(1)}秒`:'1.5秒休む → 4秒爆食い / B';
+ if(started){$('eat-label').textContent=drinking?'ごくごく…':boosted?'爆食い！！':'食う！';$('eat-hint').textContent=boosted?`満腹なし・一口2倍 あと${(state.boostUntil-state.elapsed).toFixed(1)}秒`:'クリック / Space でひとくち';}
+ $('arena').classList.toggle('boosted',boosted); $('eat').disabled=paused||drinking||state.status!=='playing'; $('pause').disabled=!started||state.status!=='playing';
  if(drawn!==state.count)draw();
  if(state.status!=='playing'&&!finished) finish();
 }
-function reset(auto=false) { state=createGame(mode); started=auto; paused=false; finished=false; drawn=-1; $('result').hidden=true; $('pause').textContent='一時停止'; $('phase').textContent=auto?'お食事中。油断大敵。':'おやつ、待機中。'; $('eat-label').textContent=auto?'食う！':'いただきます！'; $('eat-hint').textContent=auto?'クリック / Space でひとくち':'クリックして開始'; $('burst').textContent=state.interval+'秒で2倍！'; $('quip').textContent='※ ひとつ残らずお召し上がりください。'; $('special').innerHTML='別腹、解放。<small>満腹リセット · 1回だけ / B</small>'; record();render(); }
+function reset(auto=false) { state=createGame(mode); started=auto; paused=false; finished=false; drawn=-1; $('result').hidden=true; $('pause').textContent='一時停止'; $('phase').textContent=auto?'お食事中。油断大敵。':'おやつ、待機中。'; $('eat-label').textContent=auto?'食う！':'いただきます！'; $('eat-hint').textContent=auto?'クリック / Space でひとくち':'クリックして開始'; $('burst').textContent=state.interval+'秒で2倍！'; $('quip').textContent='※ ひとつ残らずお召し上がりください。';  record();render(); }
 function eat() {
  if(paused||state.status!=='playing')return;
  if(!started){started=true;$('phase').textContent='お食事中。油断大敵。';$('eat-label').textContent='食う！';$('eat-hint').textContent='クリック / Space でひとくち';}
- const amount=bite(state);
+ const previous=evolution(state); const amount=bite(state);
  if(amount){beep(amount===3?800:420+state.combo%8*40);animate($('count'),'pop');$('quip').textContent=amount===3?'三個食い！ 人間をやめかけている。':['もぐ。','もぐもぐ。','あんこが追いかけてくる。','まだおいしい。たぶん。'][state.eaten%4];}
- else{beep(90);$('quip').textContent='胃「一旦、落ち着こうか。」';animate($('arena'),'shake');}
+ if(evolution(state)!==previous){$('quip').textContent=`進化！ ${evolution(state).name}。もはや食事ではない。`;$('announcement').textContent=$('quip').textContent;animate($('evolution'),'pop');beep(1200,.2);}
+ else if(!amount&&!state.teaUntil){beep(90);$('quip').textContent='胃「一旦、落ち着こうか。」';animate($('arena'),'shake');}
  render();
 }
-function special(){if(paused)return;if(secondStomach(state)){beep(950,.25);$('quip').textContent='別腹が開通しました。人体の神秘。';$('special').innerHTML='別腹、閉店。<small>本日の営業は終了しました</small>';render();}}
-function finish(){finished=true; const won=state.status==='won';if(won&&(!Number.isFinite(best[mode])||state.elapsed<best[mode])){best[mode]=state.elapsed;try{localStorage.setItem('baibai-best',JSON.stringify(best));}catch{}record();}
- $('phase').textContent=won?'お皿の平和を守りました。':'まんじゅうが勝ちました。';$('result-label').textContent=won?'ごちそうさまでした':'たいへんよく食べましたが';$('result-title').textContent=won?'完 食 。':'人 類 敗 北 。';$('result-copy').textContent=won?'胃袋が、指数関数に勝った。':'世界は、あんこに包まれた。';$('result-stats').textContent=`${MODES[mode].label} / ${state.elapsed.toFixed(1)}秒 / ${state.eaten}個を胃袋へ`;$('result').hidden=false;$('announcement').textContent=$('result-title').textContent+ $('result-stats').textContent;beep(won?1000:120,.4);$('retry').focus(); }
+function special(){if(!started||paused)return;if(drinkTea(state)){beep(650,.2);$('quip').textContent='お茶の間も増えます。落ち着いて、焦れ。';render();$('eat').focus();}}
+function finish(){finished=true; const won=state.status==='won';if(won&&(!Number.isFinite(best[mode])||state.elapsed<best[mode])){best[mode]=state.elapsed;try{localStorage.setItem('baibai-best-v2',JSON.stringify(best));}catch{}record();}
+ $('phase').textContent=won?'お皿の平和を守りました。':'まんじゅうが勝ちました。';$('result-label').textContent=won?'ごちそうさまでした':'たいへんよく食べましたが';$('result-title').textContent=won?'完 食 。':'人 類 敗 北 。';$('result-copy').textContent=won?'胃袋が、指数関数に勝った。':'世界は、あんこに包まれた。';$('result-stats').textContent=`${MODES[mode].label} / ${state.elapsed.toFixed(1)}秒 / ${state.eaten}個完食 / 増殖${state.doubles}回 / ${evolution(state).name}`;$('result').hidden=false;$('announcement').textContent=$('result-title').textContent+ $('result-stats').textContent;beep(won?1000:120,.4);$('retry').focus(); }
 function togglePause(){if(!started||state.status!=='playing')return;paused=!paused;$('pause').textContent=paused?'再開する':'一時停止';$('phase').textContent=paused?'休憩中。増殖もお休み。':'お食事中。油断大敵。';render();}
 $('eat').addEventListener('click',eat);$('special').addEventListener('click',special);$('pause').addEventListener('click',togglePause);$('retry').addEventListener('click',()=>{reset();$('eat').focus();});
 $('sound').addEventListener('click',()=>{sound=!sound;$('sound').textContent=sound?'音：あり':'音：なし';$('sound').setAttribute('aria-pressed',sound);beep();});
 document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>{mode=button.dataset.mode;document.querySelectorAll('[data-mode]').forEach(b=>{b.classList.toggle('selected',b===button);b.setAttribute('aria-pressed',b===button);});reset();}));
-document.addEventListener('keydown',e=>{if(e.code==='Space'&& !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){if(document.activeElement.tagName==='BUTTON'&&document.activeElement!==$('eat'))return;e.preventDefault();if(!e.repeat)eat();}if(e.code==='KeyB'&&!e.repeat&&started)special();});
+document.addEventListener('keydown',e=>{if(e.code==='Space'&& !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){if(document.activeElement.tagName==='BUTTON'&&![$('eat'),$('special')].includes(document.activeElement))return;e.preventDefault();if(!e.repeat)eat();}if(e.code==='KeyB'&&!e.repeat&&started)special();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&started&&!paused&&state.status==='playing')togglePause();});
 $('share').addEventListener('click',async()=>{const text=`「バイバイまんじゅうを食い切れ」${state.status==='won'?'完食！':'人類敗北！'} ${MODES[mode].label} ${state.elapsed.toFixed(1)}秒、${state.eaten}個食べた。`;try{await navigator.clipboard.writeText(text);$('share').textContent='コピーしました！';}catch{$('share').textContent='コピーできませんでした';}setTimeout(()=>$('share').textContent='結果をコピー',2000);});
 window.addEventListener('resize',draw);
