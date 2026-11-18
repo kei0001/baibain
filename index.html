@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ja">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f4efdd"><meta name="description" content="5秒で倍増するまんじゅうを食い切れ。胃袋と指数関数が戦う、無料の連打アホゲー。"><title>バイバイまんじゅうを食い切れ</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><a href="./" class="brand">まんじゅう危機管理センター <span>®</span></a><button id="sound" class="small" aria-pressed="false">音：なし</button></header>
+<main>
+<section class="intro"><div class="eyebrow">胃袋 VS 指数関数　／　おやつ防衛ゲーム</div><h1>バイバイまんじゅうを<br><span>食い切れ<span class="bang">。</span></span></h1><p>食べなきゃ、増える。<br class="mobile">食べすぎても、詰む。</p><div class="stamp">完食<br>厳守</div></section>
+<section class="game" aria-label="まんじゅうゲーム">
+<div class="game-top"><span><i></i> <span id="phase">おやつ、待機中。</span></span><span id="clock">00.0 秒</span></div>
+<div class="arena" id="arena"><div class="counter"><span>残りのまんじゅう</span><div><strong id="count">24</strong><b>個</b></div></div><div class="burst" id="burst">5秒で2倍！</div><canvas id="canvas" aria-label="お皿の上に増えていくまんじゅう"></canvas><div class="qu" id="quip">※ ひとつ残らずお召し上がりください。</div>
+<div class="overlay" id="result" hidden><div class="result-card"><span id="result-label">ごちそうさまでした</span><h2 id="result-title">完食！</h2><p id="result-copy"></p><p id="result-stats"></p><button id="retry" class="primary">もう一皿、いく</button><button id="share" class="small">結果をコピー</button></div></div></div>
+<div class="meters"><div><label>次の倍増まで <b id="next">5.0 秒</b></label><div class="track"><div id="timer-fill"></div></div></div><div><label>満腹ゲージ <b id="stomach-label">まだいける</b></label><div class="track stomach"><div id="stomach-fill"></div></div></div></div>
+<div class="controls"><button id="eat" class="primary"><span id="eat-label">いただきます！</span><small id="eat-hint">クリックして開始</small></button><button id="special" class="special" disabled>別腹、解放。<small>満腹リセット · 1回だけ / B</small></button></div>
+<div class="bottom-line"><span>食べる：クリック / Space　<span class="desktop">連打8回で3個食い！</span></span><button id="pause" class="small" disabled>一時停止</button></div>
+</section>
+<section class="under"><div class="difficulty"><span class="mini-title">本日のお品書き</span><div role="group" aria-label="難易度"><button class="selected" data-mode="snack" aria-pressed="true">おやつ <small>24個</small></button><button data-mode="feast" aria-pressed="false">大食い <small>48個</small></button><button data-mode="hell" aria-pressed="false">無理 <small>52個</small></button></div></div><div class="record"><span class="mini-title">おやつ 最速完食</span><strong id="best">— <small>秒</small></strong></div></section>
+<section class="rules"><article><b>01 / 増えます</b><p>おやつは5秒で2倍。<br>1,024個で世界がおやつに。</p></article><article><b>02 / 詰まります</b><p>急いで食べると満腹に。<br>少し休むと胃袋が回復。</p></article><article><b>03 / 別腹あります</b><p>切り札は1回きり。<br>使いどころは、胃に聞いて。</p></article></section>
+</main><footer><span>用法・用量を守っても、増えます。</span><span>BAIBAI MANJU © 2026</span></footer><div id="announcement" role="status" aria-live="polite" class="sr-only"></div><script type="module" src="app.js"></script>
+</body></html>
