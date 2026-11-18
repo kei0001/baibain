@@ -14,7 +14,7 @@ function draw() {
  canvas.width = w * dpr; canvas.height = h * dpr; ctx.scale(dpr,dpr); ctx.clearRect(0,0,w,h);
  ctx.fillStyle='#d9d5bd'; ctx.beginPath(); ctx.ellipse(w/2,h-49,w*.36,34,0,0,Math.PI*2); ctx.fill();
  ctx.strokeStyle='#98a18a'; ctx.lineWidth=2; ctx.beginPath();ctx.ellipse(w/2,h-56,w*.36,32,0,0,Math.PI*2);ctx.fillStyle='#e5e8d6';ctx.fill();ctx.stroke();
- const n = Math.min(state.count,90), cols = Math.max(5,Math.floor(w/52)), size = Math.min(25,w/(cols*2.3));
+ const n = Math.min(state.count,90), cols = Math.max(5,Math.floor(w/52)), size = Math.min(25,w/(cols*2.3),(h-145)/(Math.ceil(n/cols)*.86+1));
  for(let i=0;i<n;i++) { const row=Math.floor(i/cols), col=i%cols; const rowCount=Math.min(cols,n-row*cols); const x=w/2+(col-(rowCount-1)/2)*size*1.65+Math.sin(i*7)*4; const y=h-65-row*size*.86; const r=size*(.93+Math.sin(i*3)*.08);
  ctx.save(); ctx.translate(x,y);ctx.rotate(Math.sin(i*12)*.14); ctx.fillStyle='#00000012';ctx.beginPath();ctx.ellipse(2,11,r,8,0,0,Math.PI*2);ctx.fill();
  ctx.beginPath();ctx.ellipse(0,0,r,r*.76,0,0,Math.PI*2);ctx.fillStyle=i%7===0?'#c79262':'#f0d2a0';ctx.fill();ctx.strokeStyle='#664c32';ctx.lineWidth=1.4;ctx.stroke();
