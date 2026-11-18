@@ -3,7 +3,7 @@ const $ = id => document.getElementById(id);
 let mode = 'snack', state = createGame(), started = false, paused = false, sound = false, audio, last = 0, drawn = -1, finished = false;
 const canvas = $('canvas'), ctx = canvas.getContext('2d');
 let best = {};
-try { best = JSON.parse(localStorage.getItem('baibai-best-v2') || '{}') || {}; } catch {}
+try { best = JSON.parse(localStorage.getItem('baibai-best-v3') || '{}') || {}; } catch {}
 function beep(freq = 360, length = .06) {
   if (!sound) return;
   try { audio ||= new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); const o = audio.createOscillator(), g = audio.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(freq, audio.currentTime); o.frequency.exponentialRampToValueAtTime(freq / 2, audio.currentTime + length); g.gain.setValueAtTime(.09, audio.currentTime); g.gain.exponentialRampToValueAtTime(.001, audio.currentTime + length); o.connect(g); g.connect(audio.destination); o.start(); o.stop(audio.currentTime + length); } catch {}
@@ -24,6 +24,7 @@ function draw() {
 }
 function record() { $('best').innerHTML = `${Number.isFinite(best[mode]) ? best[mode].toFixed(1) : '—'} <small>秒</small>`; document.querySelector('.record .mini-title').textContent=MODES[mode].label+' 最速完食'; }
 function render() {
+ $('burst').textContent=state.interval.toFixed(2).replace(/0$/, '')+'秒で2倍！';
  $('count').textContent=state.count.toLocaleString(); $('clock').textContent=state.elapsed.toFixed(1).padStart(4,'0')+' 秒';
  const remain=Math.max(0,state.next-state.elapsed); $('next').textContent=remain.toFixed(1)+' 秒'; $('timer-fill').style.width=(remain/state.interval*100)+'%'; $('stomach-fill').style.width=state.fullness+'%';
  $('stomach-label').textContent=state.fullness>90?'もう入らん！':state.fullness>65?'く、くるしい…':'まだいける'; $('stomach-fill').style.background=state.fullness>80?'var(--red)':'var(--green)';
@@ -35,7 +36,7 @@ function render() {
  $('special').disabled=!started||paused||drinking||state.elapsed<state.teaReady||state.status!=='playing';
  $('tea-label').textContent=drinking?'お茶、ごくごく…':state.elapsed<state.teaReady?'お湯、沸かし中。':'お茶を飲む';
  $('tea-hint').textContent=drinking?`あと${(state.teaUntil-state.elapsed).toFixed(1)}秒で爆食い！`:state.elapsed<state.teaReady?`あと${(state.teaReady-state.elapsed).toFixed(1)}秒`:'1.5秒休む → 4秒爆食い / B';
- if(started){$('eat-label').textContent=drinking?'ごくごく…':boosted?'爆食い！！':'食う！';$('eat-hint').textContent=boosted?`満腹なし・一口2倍 あと${(state.boostUntil-state.elapsed).toFixed(1)}秒`:'クリック / Space でひとくち';}
+ if(started){$('eat-label').textContent=drinking?'ごくごく…':boosted?'爆食い！！':'食う！';$('eat-hint').textContent=boosted?`一口2倍・満腹注意 あと${(state.boostUntil-state.elapsed).toFixed(1)}秒`:'クリック / Space でひとくち';}
  $('arena').classList.toggle('boosted',boosted); $('eat').disabled=paused||drinking||state.status!=='playing'; $('pause').disabled=!started||state.status!=='playing';
  if(drawn!==state.count)draw();
  if(state.status!=='playing'&&!finished) finish();
@@ -51,7 +52,7 @@ function eat() {
  render();
 }
 function special(){if(!started||paused)return;if(drinkTea(state)){beep(650,.2);$('quip').textContent='お茶の間も増えます。落ち着いて、焦れ。';render();$('eat').focus();}}
-function finish(){finished=true; const won=state.status==='won';if(won&&(!Number.isFinite(best[mode])||state.elapsed<best[mode])){best[mode]=state.elapsed;try{localStorage.setItem('baibai-best-v2',JSON.stringify(best));}catch{}record();}
+function finish(){finished=true; const won=state.status==='won';if(won&&(!Number.isFinite(best[mode])||state.elapsed<best[mode])){best[mode]=state.elapsed;try{localStorage.setItem('baibai-best-v3',JSON.stringify(best));}catch{}record();}
  $('phase').textContent=won?'お皿の平和を守りました。':'まんじゅうが勝ちました。';$('result-label').textContent=won?'ごちそうさまでした':'たいへんよく食べましたが';$('result-title').textContent=won?'完 食 。':'人 類 敗 北 。';$('result-copy').textContent=won?'胃袋が、指数関数に勝った。':'世界は、あんこに包まれた。';$('result-stats').textContent=`${MODES[mode].label} / ${state.elapsed.toFixed(1)}秒 / ${state.eaten}個完食 / 増殖${state.doubles}回 / ${evolution(state).name}`;$('result').hidden=false;$('announcement').textContent=$('result-title').textContent+ $('result-stats').textContent;beep(won?1000:120,.4);$('retry').focus(); }
 function togglePause(){if(!started||state.status!=='playing')return;paused=!paused;$('pause').textContent=paused?'再開する':'一時停止';$('phase').textContent=paused?'休憩中。増殖もお休み。':'お食事中。油断大敵。';render();}
 $('eat').addEventListener('click',eat);$('special').addEventListener('click',special);$('pause').addEventListener('click',togglePause);$('retry').addEventListener('click',()=>{reset();$('eat').focus();});

@@ -1,7 +1,7 @@
 export const MODES = {
   snack: { label: 'おやつ', count: 48, interval: 6 },
   feast: { label: '大食い', count: 96, interval: 5 },
-  hell: { label: '無理', count: 160, interval: 4.5 }
+  hell: { label: '無理', count: 160, interval: 4.5, acceleration: 0.25, minInterval: 3 }
 };
 export const EVOLUTIONS = [
   { at: 0, name: 'ひとくち人間', power: 1 },
@@ -23,7 +23,9 @@ export function tick(s, dt) {
     s.fullness = 0; s.boostUntil = s.teaUntil + 4; s.teaUntil = 0;
   }
   while (s.elapsed >= s.next && s.status === 'playing') {
-    s.count *= 2; s.peak = Math.max(s.peak, s.count); s.next += s.interval; s.doubles++;
+    s.count *= 2; s.peak = Math.max(s.peak, s.count); s.doubles++;
+    s.interval = Math.max(s.minInterval || s.interval, s.interval - (s.acceleration || 0));
+    s.next += s.interval;
     if (s.count >= 1024) s.status = 'lost';
   }
 }
@@ -34,7 +36,7 @@ export function bite(s) {
   const boosted = s.elapsed < s.boostUntil;
   const amount = Math.min(s.count, evolution(s).power * (boosted ? 2 : 1) * (s.combo % 8 === 0 ? 3 : 1));
   s.count -= amount; s.eaten += amount;
-  s.fullness = Math.min(100, s.fullness + (boosted ? 0 : 7));
+  s.fullness = Math.min(100, s.fullness + (6 + Math.sqrt(amount) * 2));
   if (!s.count) s.status = 'won';
   return amount;
 }
