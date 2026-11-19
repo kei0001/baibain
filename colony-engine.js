@@ -5,8 +5,8 @@ export const OPPONENTS = [
 ];
 export const UPGRADES = {
  speed: {name:'増殖力',description:'倍増までの時間 −0.4秒 / Lv',max:8},
- size: {name:'でかさ',description:'1個あたりの満腹 +2 / Lv',max:8},
- weight: {name:'あんこの重さ',description:'相手の満腹回復 −8% / Lv',max:8}
+ size: {name:'でかさ',description:'満腹にする力 +2 / Lv（4個分まで）',max:8},
+ weight: {name:'あんこの重さ',description:'相手の満腹回復 −6% / Lv',max:8}
 };
 export function cleanSave(raw={}) {
  const integer=(v,max)=>Number.isSafeInteger(v)&&v>=0?Math.min(v,max):0;
@@ -17,19 +17,21 @@ export function buyUpgrade(save,key){if(!UPGRADES[key]||save.levels[key]>=8)retu
 export function newColony(stage=0,levels={}) {
  const safe=cleanSave({levels}).levels;
  stage=Math.max(0,Math.min(2,Math.floor(stage)||0));
- return {stage,levels:safe,count:[12,20,28][stage],peak:[12,20,28][stage],born:0,eaten:0,elapsed:0,progress:0,interval:7-safe.speed*.4,fullness:0,nextBite:1.25,teaReady:OPPONENTS[stage].tea,teaUntil:0,boostUntil:0,status:'playing',lastTap:-99,taps:0,doubles:0,settled:false};
+ return {stage,levels:safe,count:[12,20,28][stage],peak:[12,20,28][stage],born:0,eaten:0,elapsed:0,progress:0,interval:7-safe.speed*.4,fullness:0,nextBite:1.25,teaReady:OPPONENTS[stage].tea,teaUntil:0,boostUntil:0,status:'playing',lastTap:-99,energy:100,taps:0,doubles:0,settled:false};
 }
-export function encourage(s){if(s.status!=='playing'||s.elapsed-s.lastTap<.12)return false;s.lastTap=s.elapsed;s.progress+=.2;s.taps++;multiply(s);return true;}
+export function appetite(s){return Math.max(OPPONENTS[s.stage].bite,Math.ceil(s.count*[.035,.065,.12][s.stage]));}
+export function tapPower(s){return s.teaUntil ? .4 : s.fullness>=85 ? .25 : .08;}
+export function encourage(s){if(s.status!=='playing'||s.elapsed-s.lastTap<.12||s.energy<8)return false;s.energy-=8;s.lastTap=s.elapsed;s.progress+=tapPower(s);s.taps++;multiply(s);return true;}
 function multiply(s){while(s.progress>=s.interval&&s.status==='playing'){s.progress-=s.interval;s.born+=s.count;s.count*=2;s.doubles++;s.peak=Math.max(s.peak,s.count);if(s.count>=1024)s.status='won';}}
 export function advance(s,dt){
  if(!Number.isFinite(dt)||dt<=0)return;
  // Small deterministic steps keep tea, eating and multiplication ordered.
- while(dt>1e-9&&s.status==='playing'){const step=Math.min(.025,dt);dt-=step;s.elapsed+=step;const o=OPPONENTS[s.stage];
- s.fullness=Math.max(0,s.fullness-o.recovery*(1-s.levels.weight*.08)*step);
+ while(dt>1e-9&&s.status==='playing'){const step=Math.min(.025,dt);dt-=step;s.elapsed+=step;s.energy=Math.min(100,s.energy+12*step);if(s.elapsed>=90){s.status='lost';break;}const o=OPPONENTS[s.stage];
+ s.fullness=Math.max(0,s.fullness-o.recovery*(1-s.levels.weight*.06)*(1+Math.floor(s.peak/128)*.6)*step);
  s.progress+=step;multiply(s);if(s.status!=='playing')break;
  if(s.teaUntil){if(s.elapsed>=s.teaUntil){s.teaUntil=0;s.fullness=0;s.boostUntil=s.elapsed+3;s.nextBite=s.elapsed+.25;}continue;}
  if(s.elapsed>=s.teaReady){s.teaUntil=s.elapsed+2;s.teaReady=s.elapsed+o.tea;continue;}
- if(s.elapsed>=s.nextBite){s.nextBite=s.elapsed+o.pace;if(s.fullness<85){const amount=Math.min(s.count,o.bite*(s.elapsed<s.boostUntil?2:1));s.count-=amount;s.eaten+=amount;s.fullness=Math.min(100,s.fullness+amount*(7+s.levels.size*2));if(s.count===0)s.status='lost';}}
+ if(s.elapsed>=s.nextBite){s.nextBite=s.elapsed+o.pace;if(s.fullness<85){const amount=Math.min(s.count,appetite(s)*(s.elapsed<s.boostUntil?2:1));s.count-=amount;s.eaten+=amount;s.fullness=Math.min(100,s.fullness+(Math.min(amount,4)*(7+s.levels.size*2)+Math.sqrt(Math.max(0,amount-4))*2));if(s.count===0)s.status='lost';}}
  }
 }
 export function score(s){return s.born+s.eaten*3+Math.floor(s.elapsed)*2+(s.status==='won'?300:0);}
