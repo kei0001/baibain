@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ja">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#009fe3"><meta name="description" content="倍々に増殖するまんじゅうを食い切れ。胃袋と指数関数が戦う、無料の連打アホゲー。"><title>バイバイまんじゅうを食い切れ</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="theme.css"></head>
+<body>
+<header><a href="./" class="brand"><span class="brand-bell" aria-hidden="true">●</span> ひみつのおやつ研究所</a><button id="sound" class="small" aria-pressed="false">音：なし</button></header>
+<main><p class="mode-return"><a href="./">← まんじゅう側で増やす・育てる</a></p>
+<section class="intro"><div class="eyebrow">ひみつ道具、うっかり発動！</div><h1>バイバイまんじゅうを<br><span>食い切れ<span class="bang">。</span></span></h1><p>食べなきゃ、増える。<br class="mobile">食べすぎても、詰む。</p><div class="stamp">たすけて〜！<span aria-hidden="true">✦</span></div></section>
+<section class="game" aria-label="まんじゅうゲーム"><div class="collar" aria-hidden="true"><span class="bell"><i></i></span></div>
+<div class="game-top"><span><i></i> <span id="phase">おやつ、待機中。</span></span><span id="clock">00.0 秒</span></div>
+<div class="arena" id="arena"><div class="counter"><span>残りのまんじゅう</span><div><strong id="count">48</strong><b>個</b></div></div><div class="burst" id="burst">6秒で2倍！</div><canvas id="canvas" aria-label="お皿の上に増えていくまんじゅう"></canvas><div class="qu" id="quip">※ ひとつ残らずお召し上がりください。</div>
+<div class="overlay" id="result" hidden><div class="result-card"><span id="result-label">ごちそうさまでした</span><h2 id="result-title">完食！</h2><p id="result-copy"></p><p id="result-stats"></p><button id="retry" class="primary">もう一皿、いく</button><button id="share" class="small">結果をコピー</button></div></div></div>
+<div class="evolution" id="evolution"><div><strong id="evolution-name">ひとくち人間</strong><b id="evolution-power">一口 1個</b></div><div class="track"><div id="evolution-fill"></div></div><small id="evolution-next">あと20個で「両手食い」</small></div><div class="meters"><div><label>次の倍増まで <b id="next">6.0 秒</b></label><div class="track"><div id="timer-fill"></div></div></div><div><label>満腹ゲージ <b id="stomach-label">まだいける</b></label><div class="track stomach"><div id="stomach-fill"></div></div></div></div>
+<div class="controls"><button id="eat" class="primary"><span id="eat-label">いただきます！</span><small id="eat-hint">クリックして開始</small></button><button id="special" class="special" disabled><span id="tea-label">お茶を飲む</span><small id="tea-hint">1.5秒休む → 4秒爆食い / B</small></button></div>
+<div class="bottom-line"><span>食べる：クリック / Space　<span class="desktop">連打8回で3倍食い！</span></span><button id="pause" class="small" disabled>一時停止</button></div>
+</section>
+<section class="under"><div class="difficulty"><span class="mini-title">今日のぼうけん</span><div role="group" aria-label="難易度"><button class="selected" data-mode="snack" aria-pressed="true">おやつ <small>48個</small></button><button data-mode="feast" aria-pressed="false">大食い <small>96個</small></button><button data-mode="hell" aria-pressed="false">無理 <small>160個</small></button></div></div><div class="record"><span class="mini-title">おやつ 最速完食</span><strong id="best">— <small>秒</small></strong></div></section>
+<section class="rules"><article><b>01 / 増えます</b><p>おやつは6秒。無理は徐々に加速。<br>1,024個で世界がおやつに。</p></article><article><b>02 / 進化します</b><p>20・50・100・220個で進化。<br>一口が増えるほど満腹も増加。</p></article><article><b>03 / お茶で覚醒</b><p>満腹になったらお茶を一杯。<br>満腹解消→一口2倍。食べすぎ注意！</p></article></section>
+</main><footer><span>用法・用量を守っても、増えます。</span><span>BAIBAI MANJU © 2026</span></footer><div id="announcement" role="status" aria-live="polite" class="sr-only"></div><script type="module" src="app.js"></script>
+</body></html>

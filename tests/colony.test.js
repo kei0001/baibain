@@ -1,0 +1,14 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {newColony,advance,encourage,cleanSave,buyUpgrade,settle,reward} from '../colony-engine.js';
+function play(stage,lv=0,taps=2){const s=newColony(stage,{speed:lv,size:lv,weight:lv});let next=0;while(s.status==='playing'&&s.elapsed<180){advance(s,.02);if(taps&&s.elapsed>=next){encourage(s);next+=1/taps;}}return s;}
+test('first opponent is beatable without upgrades at two taps/sec',()=>{assert.equal(play(0).status,'won');});
+test('progression opponents reward growth',()=>{assert.equal(play(1).status,'lost');assert.equal(play(1,1).status,'won');assert.equal(play(2).status,'lost');assert.equal(play(2,2).status,'won');});
+test('losing earns XP, payout is once only and victories unlock next stage',()=>{const save=cleanSave(),loss=play(1);const xp=settle(loss,save);assert.ok(xp>0);assert.equal(save.xp,xp);assert.equal(settle(loss,save),0);assert.equal(save.unlocked,0);settle(play(0),save);assert.equal(save.unlocked,1);});
+test('playing runs cannot claim rewards',()=>{const save=cleanSave();assert.equal(settle(newColony(),save),0);assert.equal(save.xp,0);});
+test('purchases deduct correct XP, cap at eight and cannot overspend',()=>{const save=cleanSave({xp:35});assert.ok(buyUpgrade(save,'size'));assert.equal(save.xp,0);assert.equal(save.levels.size,1);assert.equal(buyUpgrade(save,'speed'),false);assert.equal(buyUpgrade(save,'nope'),false);save.xp=10000;save.levels.size=8;assert.equal(buyUpgrade(save,'size'),false);});
+test('storage validation tolerates malformed values',()=>{assert.deepEqual(cleanSave(null),cleanSave());const s=cleanSave({xp:-1,unlocked:100,levels:{speed:99,size:'5',weight:NaN}});assert.equal(s.xp,0);assert.equal(s.unlocked,2);assert.deepEqual(s.levels,{speed:8,size:0,weight:0});});
+test('size fills humans faster and weight slows recovery',()=>{const a=newColony(),b=newColony(0,{size:3});advance(a,1.3);advance(b,1.3);assert.ok(b.fullness>a.fullness);const c=newColony(),d=newColony(0,{weight:3});c.fullness=d.fullness=80;advance(c,.5);advance(d,.5);assert.ok(d.fullness>c.fullness);});
+test('taps are rate-limited; growth speed upgrade shortens interval',()=>{const s=newColony();assert.ok(encourage(s));assert.equal(encourage(s),false);assert.equal(s.progress,.2);assert.ok(newColony(0,{speed:3}).interval<s.interval);});
+test('tea stops eating then starts temporary double bites',()=>{const s=newColony();s.count=500;s.teaReady=.1;advance(s,.2);assert.ok(s.teaUntil);const n=s.eaten;advance(s,1);assert.equal(s.eaten,n);advance(s,1.3);assert.ok(s.boostUntil>s.elapsed);assert.equal(s.eaten-n,2);});
+test('terminal states stop all simulation and inputs',()=>{const s=play(0),snapshot=JSON.stringify(s);advance(s,20);encourage(s);assert.equal(JSON.stringify(s),snapshot);assert.ok(reward(s)>0);});
